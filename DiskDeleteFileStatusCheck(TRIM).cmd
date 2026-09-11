@@ -9,16 +9,32 @@ $headers = @(
 	(&$u '78c1 789f 5340')
 	(&$u '985e 578b')
 	(&$u '5927 5c0f')
+	(&$u '72c0 614b')
+	(&$u '6a94 6848 7cfb 7d71')
 	(&$u '52d5 4f5c')
 )
 $rows = @()
 
 Get-PhysicalDisk | ForEach-Object {
 	$disk = $_
-	$volumes = Get-Partition -DiskNumber $disk.DeviceID | Get-Volume
-	foreach ($volume in $volumes) {
-		$part = if ($volume.DriveLetter) { $volume.DriveLetter + ':' } else { '[' + (&$u '7121 78c1 789f 6a5f') + ']' }
+	$partitions = Get-Partition -DiskNumber $disk.DeviceID
+	foreach ($partition in $partitions) {
+		$volume = $partition | Get-Volume
+		$hiddenNote = if ($partition.IsHidden -and -not $volume.DriveLetter) { ' (' + (&$u '96b1 85cf 5206 5272 5340') + ')' } else { '' }
+		$partName = if ($volume.DriveLetter) { $volume.DriveLetter + ':' } else { '[' + (&$u '7121 78c1 789f 6a5f') + ']' + $hiddenNote }
+		$part = 'Disk ' + $disk.DeviceID + ' P' + $partition.PartitionNumber + ': ' + $partName
 		$size = [math]::Round($volume.Size / 1GB, 2).ToString() + ' GB'
+		$fileSystem = if ($volume.FileSystem) { [string]$volume.FileSystem } else { '-' }
+
+		$good = &$u '826f 597d'
+		$gptType = ([string]$partition.GptType).ToLower()
+		$status = switch ($gptType) {
+			'{c12a7328-f81f-11d2-ba4b-00a0c93ec93b}' { $good + ' (EFI ' + (&$u '7cfb 7d71 78c1 789f 5206 5272') + ')' }
+			'{e3c9e316-0b5c-4db8-817d-f92df00215ae}' { $good + ' (Microsoft ' + (&$u '4fdd 7559 5206 5272 5340') + ')' }
+			'{de94bba4-06d1-4d40-a16a-bfd50179d6ac}' { $good + ' (' + (&$u '4fee 5fa9 78c1 789f 5206 5272') + ')' }
+			'{ebd0a0a2-b9e5-4433-87c0-68b6b72699c7}' { $good + ' (' + (&$u '57fa 672c 8cc7 6599 78c1 789f 5206 5272') + ')' }
+			default { $good + ' (' + (&$u '78c1 789f 5206 5272') + ')' }
+		}
 
 		if ($disk.MediaType -eq 'HDD') {
 			$type = 'HDD'
@@ -34,7 +50,7 @@ Get-PhysicalDisk | ForEach-Object {
 			$action = (&$u '7121 6cd5 5224 65b7')
 		}
 
-		$rows += ,@($part, $type, $size, $action)
+		$rows += ,@($part, $type, $size, $status, $fileSystem, $action)
 	}
 }
 
