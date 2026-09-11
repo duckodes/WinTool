@@ -9,6 +9,8 @@ $headers = @(
 	(&$u '78c1 789f 5340')
 	(&$u '985e 578b')
 	(&$u '5927 5c0f')
+	(&$u '53ef 7528 767e 5206 6bd4')
+	(&$u '53ef 7528 7a7a 9593')
 	(&$u '72c0 614b')
 	(&$u '6a94 6848 7cfb 7d71')
 	(&$u '52d5 4f5c')
@@ -24,6 +26,8 @@ Get-PhysicalDisk | ForEach-Object {
 		$partName = if ($volume.DriveLetter) { $volume.DriveLetter + ':' } else { '[' + (&$u '7121 78c1 789f 6a5f') + ']' + $hiddenNote }
 		$part = 'Disk ' + $disk.DeviceID + ' P' + $partition.PartitionNumber + ': ' + $partName
 		$size = [math]::Round($volume.Size / 1GB, 2).ToString() + ' GB'
+		$availablePercent = if ($volume.Size -gt 0 -and $volume.SizeRemaining -ne $null) { ([math]::Round(($volume.SizeRemaining / $volume.Size) * 100, 2)).ToString() + '%' } else { '-' }
+		$availableSpace = if ($volume.SizeRemaining -ne $null) { [math]::Round($volume.SizeRemaining / 1GB, 2).ToString() + ' GB' } else { '-' }
 		$fileSystem = if ($volume.FileSystem) { [string]$volume.FileSystem } else { '-' }
 
 		$good = &$u '826f 597d'
@@ -50,7 +54,7 @@ Get-PhysicalDisk | ForEach-Object {
 			$action = (&$u '7121 6cd5 5224 65b7')
 		}
 
-		$rows += ,@($part, $type, $size, $status, $fileSystem, $action)
+		$rows += ,@($part, $type, $size, $availablePercent, $availableSpace, $status, $fileSystem, $action)
 	}
 }
 
